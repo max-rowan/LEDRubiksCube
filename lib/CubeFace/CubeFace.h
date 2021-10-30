@@ -1,33 +1,32 @@
-#include <FastLED.h>
-
+#include <CubePanel.h>
 class CubeFace {
- private:
-  void _rotateFaceCW();
-  void _rotateFaceCCW();
-  void _rotateEdgesCW();
-  void _rotateEdgesCCW();
-  void _rotateEdge(CRGB::HTMLColorCode**, CRGB::HTMLColorCode**);
-  void _setBorderEdge(CRGB::HTMLColorCode**, CRGB::HTMLColorCode*,
-                      CRGB::HTMLColorCode*, CRGB::HTMLColorCode*);
+private:
+  void _rotateFaceCW( );
+  void _rotateFaceCCW( );
+  void _rotateEdgesCW( );
+  void _rotateEdgesCCW( );
+  void _rotateEdge(CubePanel **, CubePanel **);
+  void _setBorderEdge(CubePanel **, CubePanel *, CubePanel *, CubePanel *);
 
- public:
+public:
+  uint8_t faceNum;
   CRGB::HTMLColorCode color;
-  CRGB::HTMLColorCode face[3][3];
+  CubePanel face[3][3];
 
-  CRGB::HTMLColorCode* upperBorderEdge[3];
-  CRGB::HTMLColorCode* rightBorderEdge[3];
-  CRGB::HTMLColorCode* bottomBorderEdge[3];
-  CRGB::HTMLColorCode* leftBorderEdge[3];
+  CubePanel *upperBorderEdge[3];
+  CubePanel *rightBorderEdge[3];
+  CubePanel *bottomBorderEdge[3];
+  CubePanel *leftBorderEdge[3];
 
-  CubeFace();
-  CubeFace(CRGB::HTMLColorCode);
+  CubeFace( );
+  CubeFace(uint8_t, CRGB::HTMLColorCode);
 
-  void rotateCW();
-  void rotateCCW();
+  void rotateCW( );
+  void rotateCCW( );
 
   void setFace(CRGB::HTMLColorCode[3][3]);
 
-  void setUpperFaceBorders(CubeFace*, CubeFace*, CubeFace*, CubeFace*);
-  void setBottomFaceBorders(CubeFace*, CubeFace*, CubeFace*, CubeFace*);
-  void setSideFaceBorder(CubeFace*);
+  void setUpperFaceBorders(CubeFace *, CubeFace *, CubeFace *, CubeFace *);
+  void setBottomFaceBorders(CubeFace *, CubeFace *, CubeFace *, CubeFace *);
+  void setSideFaceBorder(CubeFace *);
 };
