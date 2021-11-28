@@ -28,7 +28,17 @@ void setup( ) {
 
 void loop( ) {
   delay(1000);
+  // cd.rotate(cube.pFront, false, 1000);
+  // cube.f( );
   cd.rotate(cube.pRight, false, 1000);
   cube.r( );
+  // cd.rotate(cube.pBack, false, 1000);
+  // cube.b( );
+  // cd.rotate(cube.pLeft, false, 1000);
+  // cube.l( );
+  // cd.rotate(cube.pUpper, false, 1000);
+  // cube.u( );
+  // cd.rotate(cube.pBottom, false, 1000);
+  // cube.d( );
   cd.display( );
 }

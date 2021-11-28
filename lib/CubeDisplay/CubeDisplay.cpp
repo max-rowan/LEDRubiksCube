@@ -22,6 +22,8 @@ uint16_t CubeDisplay::_XY(uint8_t x, uint8_t y) {
   return i;
 }
 
+/**************************************************************************************************/
+/**************************************** Edge Animation ******************************************/
 bool CubeDisplay::_isEdgeRow(CubePanel *edge[3]) { return edge[0]->y == edge[1]->y; }
 
 int CubeDisplay::_getEdgeDir(CubePanel *edge[3]) {
@@ -65,13 +67,11 @@ void CubeDisplay::_clearMatrixCol(int faceNum, int matrixColNum) {
   }
 }
 
-void CubeDisplay::_clearFaceLEDs(CubeFace *cf) {
-  int yStart = cf->faceNum * 8;
-  for (int y = 0; y < 8; y++) {
-    for (int x = 0; x < 8; x++) {
-      int xy = _XY(x, yStart + y);
-      leds[xy] = CRGB::Black;
-    }
+void CubeDisplay::_clearFaceLEDs(CubeFace cf) {
+  int start = cf.faceNum * 64;
+  int end = start + 64;
+  for (int i = start; i < end; i++) {
+    leds[i] = CRGB::Black;
   }
 }
 
@@ -197,21 +197,197 @@ void CubeDisplay::_setEdgeLEDs(CubePanel *fromEdge[3], CubePanel *toEdge[3], dou
                     shiftNum, toEdge, fromEdge[i]->color);
   }
 }
+/*************************************** End Edge Animation ***************************************/
+/**************************************************************************************************/
+
+/**************************************************************************************************/
+/*************************************** Edge Animation 2 *****************************************/
+
+bool CubeDisplay::_edgeDirMatches(CubePanel *edge[3]) {
+  bool isRow = _isEdgeRow(edge);
+  return (isRow && edge[0]->x < edge[1]->x || !isRow && edge[0]->y < edge[1]->y);
+}
+
+/**
+ *  Gets an array of pointers to the led color array
+ *
+ * @param faceNum   Face number: 0-6
+ * @param rowNum    Row number of the cube panel: 0-2
+ * @param edgeLeds  Array of pointers to led array
+ */
+void CubeDisplay::_getFaceLEDRow(int faceNum, int rowNum, CRGB *edgeLeds[16]) {
+  int yStart = faceNum * 8;
+  int y0 = rowNum * 3;
+
+  for (int x = 0; x < 8; x++) {
+    int y = yStart + y0;
+
+    // Set pointer for the first row
+    int idx = x;
+    int rowNum = y0;
+    if (y0 == 0 || y0 == 7) {
+      idx = x + 8;
+    }
+    int xy = _XY(x, y);
+    edgeLeds[idx] = &leds[xy];
+
+    // Set pointer for the second row
+    rowNum = y0 + 1;
+    if (rowNum == 0 || rowNum == 7) {
+      idx = x + 8;
+    } else {
+      idx = x;
+    }
+    xy = _XY(x, y + 1);
+    edgeLeds[idx] = &leds[xy];
+  }
+}
+
+void CubeDisplay::_getFaceLEDCol(int faceNum, int colNum, CRGB *edgeLeds[16]) {
+  int yStart = faceNum * 8;
+  int x = colNum * 3;
+
+  for (int i = 0; i < 8; i++) {
+    int y = yStart + i;
+
+    // Set pointer for the first column
+    int idx = i;
+    int colNum = x;
+    if (colNum == 0 || colNum == 7) {
+      idx = i + 8;
+    }
+    int xy = _XY(colNum, y);
+    edgeLeds[idx] = &leds[xy];
+
+    // Set pointer for the second column
+    idx = i;
+    colNum = x + 1;
+    if (colNum == 0 || colNum == 7) {
+      idx = i + 8;
+    }
+    xy = _XY(colNum, y);
+    edgeLeds[idx] = &leds[xy];
+  }
+}
+
+void CubeDisplay::_invert(CRGB *edgeLEDs[16]) {
+  CRGB *tempLED;
+  for (int i = 0; i < 8; i++) {
+    tempLED = edgeLEDs[i];
+    edgeLEDs[i] = edgeLEDs[7 - i];
+    edgeLEDs[8 - i] = tempLED;
+
+    edgeLEDs[8 + i] = edgeLEDs[15 - i];
+    edgeLEDs[15 - i] = tempLED;
+  }
+}
+
+void CubeDisplay::_getLEDEdgePointers(CubePanel *edge[3], CRGB *edgeLeds[16]) {
+  bool isRow = _isEdgeRow(edge);
+  bool dirMatches = _edgeDirMatches(edge);
+  int faceNum = edge[0]->faceNum;
+
+  if (isRow) {
+    int rowNum = edge[0]->y;
+    _getFaceLEDRow(faceNum, rowNum, edgeLeds);
+  } else {
+    int colNum = edge[0]->x;
+    _getFaceLEDCol(faceNum, colNum, edgeLeds);
+  }
+
+  if (!dirMatches) {
+    _invert(edgeLeds);
+  }
+}
+
+void CubeDisplay::_appendFaceEdgeLeds(CRGB *faceEdgeLeds[64], CRGB *edgeLeds[16], int startPos) {
+  for (int i = 0; i < 8; i++) {
+    faceEdgeLeds[startPos + i] = edgeLeds[i];
+    faceEdgeLeds[32 + startPos + i] = edgeLeds[8 + i];
+  }
+}
+
+void CubeDisplay::_getLEDFaceEdgePointers(CubeFace *face, CRGB *faceEdgeLeds[64]) {
+  CRGB *edgeLeds[16];
+  _getLEDEdgePointers(face->upperBorderEdge, edgeLeds);
+  _appendFaceEdgeLeds(faceEdgeLeds, edgeLeds, 0);
+
+  // _getLEDEdgePointers(face->rightBorderEdge, edgeLeds);
+  // _appendFaceEdgeLeds(faceEdgeLeds, edgeLeds, 16);
+
+  // _getLEDEdgePointers(face->bottomBorderEdge, edgeLeds);
+  // _appendFaceEdgeLeds(faceEdgeLeds, edgeLeds, 32);
+
+  // _getLEDEdgePointers(face->leftBorderEdge, edgeLeds);
+  // _appendFaceEdgeLeds(faceEdgeLeds, edgeLeds, 48);
+}
+
+void CubeDisplay::_shiftLedsRight(CRGB *leds[64]) {
+  CRGB *temp = leds[63];
+  for (int i = 63; i >= 0; i--) {
+    *leds[i + 1] = *leds[i];
+  }
+  *leds[0] = *temp;
+}
+
+void CubeDisplay::_shiftLedsLeft(CRGB *leds[64]) {
+  CRGB *temp = leds[0];
+  for (int i = 0; i < 63; i++) {
+    *leds[i] = *leds[i + 1];
+  }
+  *leds[63] = *temp;
+}
+
+void CubeDisplay::_shiftLeds(CRGB *leds[64], int shiftNum) {
+  if (shiftNum > 0) {
+    _shiftLedsRight(leds);
+  }
+  if (shiftNum < 0) {
+    _shiftLedsLeft(leds);
+  }
+}
+
+/*************************************** End Edge Animation ***************************************/
+/**************************************************************************************************/
 
 void CubeDisplay::_setEdgesLEDs(CubeFace *cf, double phi) {
   // clear all edge LEDs
   _clearCubeFaceEdges(cf);
 
-  // for each edge
-  _setEdgeLEDs(cf->upperBorderEdge, phi > 0 ? cf->leftBorderEdge : cf->rightBorderEdge, phi);
-  _setEdgeLEDs(cf->rightBorderEdge, phi > 0 ? cf->upperBorderEdge : cf->bottomBorderEdge, phi);
-  _setEdgeLEDs(cf->bottomBorderEdge, phi > 0 ? cf->rightBorderEdge : cf->leftBorderEdge, phi);
-  _setEdgeLEDs(cf->leftBorderEdge, phi > 0 ? cf->bottomBorderEdge : cf->upperBorderEdge, phi);
+  // set edge leds
+  CRGB *faceEdgeLeds[64];
+  _getLEDFaceEdgePointers(cf, faceEdgeLeds);
+
+  for (int i = 0; i < 16; i++) {
+    *faceEdgeLeds[i] = CRGB::Turquoise;
+  }
+
+  // for (CRGB *led : faceEdgeLeds) {
+  //   // Iterate over each edge, appending the row/col that's closer to the edge to 0-31,
+  //   //  & the row/col that's closer to the center to 32-63
+
+  //   //
+  //   *led = CRGB::Turquoise;
+  // }
+
+  // int shiftNum = (int)(matrixWidth * phi / (PI / 2));
+  // _shiftLeds(faceEdgeLeds, shiftNum);
 }
+
+// void CubeDisplay::_setEdgesLEDs(CubeFace *cf, double phi) {
+//   // clear all edge LEDs
+//   _clearCubeFaceEdges(cf);
+
+//   // for each edge
+//   _setEdgeLEDs(cf->upperBorderEdge, phi > 0 ? cf->leftBorderEdge : cf->rightBorderEdge, phi);
+//   _setEdgeLEDs(cf->rightBorderEdge, phi > 0 ? cf->upperBorderEdge : cf->bottomBorderEdge, phi);
+//   _setEdgeLEDs(cf->bottomBorderEdge, phi > 0 ? cf->rightBorderEdge : cf->leftBorderEdge, phi);
+//   _setEdgeLEDs(cf->leftBorderEdge, phi > 0 ? cf->bottomBorderEdge : cf->upperBorderEdge, phi);
+// }
 
 void CubeDisplay::_setFaceLEDs(CubeFace *cf, double phi) {
   // turn off face LEDs
-  _clearFaceLEDs(cf);
+  _clearFaceLEDs(*cf);
 
   // set face's colors
   int yStart = cf->faceNum * 8;
@@ -273,17 +449,58 @@ void CubeDisplay::_mapCoordToLEDs(int faceNum, int x, int y, CRGB::HTMLColorCode
   _setMatrixLED(yStart, x + 1, y + 1, color);
 }
 
-void CubeDisplay::setCubeLEDs(CubeFace *cf, double phi) {
-  setCubeLEDs( );
-  _setFaceLEDs(cf, phi);
-  _setEdgesLEDs(cf, phi);
+/**
+ * Maps a CubePanel to four LED matrix coordinates
+ */
+void CubeDisplay::_mapPanelToLEDs(CubePanel panel) {
+  int x = 3 * panel.x;
+  int y = 3 * panel.y;
+  _mapCoordToLEDs(panel.faceNum, x, y, panel.color);
 }
 
-void CubeDisplay::setCubeLEDs( ) {
-  CubeFace *faces[5] = {pCube->pFront, pCube->pRight, pCube->pBack, pCube->pLeft, pCube->pUpper};
-  for (CubeFace *face : faces) {
-    _setFaceLEDs(face, 0);
+void CubeDisplay::_mapFaceToLEDs(CubeFace face) {
+  for (size_t y = 0; y < 3; y++) {
+    for (size_t x = 0; x < 3; x++) {
+      CubePanel panel = face.face[y][x];
+      _mapPanelToLEDs(panel);
+    }
   }
+}
+
+void CubeDisplay::setCubeLEDs(CubeFace *cf, double phi) {
+  // setCubeLEDs( );
+  _setEdgesLEDs(cf, phi);
+  // _setFaceLEDs(cf, phi);
+}
+
+// void CubeDisplay::setCubeLEDs( ) {
+//   CubeFace *faces[5] = {pCube->pFront, pCube->pRight, pCube->pBack, pCube->pLeft, pCube->pUpper};
+//   for (CubeFace *face : faces) {
+//     _setFaceLEDs(face, 0);
+//   }
+// }
+
+void CubeDisplay::setCubeLEDs( ) {
+  CubeFace faces[5] = {*pCube->pFront, *pCube->pRight, *pCube->pBack, *pCube->pLeft,
+                       *pCube->pUpper};
+  for (CubeFace face : faces) {
+    _clearFaceLEDs(face);
+    _mapFaceToLEDs(face);
+  }
+  // _clearFaceLEDs(*pCube->pFront);
+  // _mapFaceToLEDs(*pCube->pFront);
+
+  // _clearFaceLEDs(*pCube->pRight);
+  // _mapFaceToLEDs(*pCube->pRight);
+
+  // _clearFaceLEDs(*pCube->pBack);
+  // _mapFaceToLEDs(*pCube->pBack);
+
+  // _clearFaceLEDs(*pCube->pLeft);
+  // _mapFaceToLEDs(*pCube->pLeft);
+
+  // _clearFaceLEDs(*pCube->pUpper);
+  // _mapFaceToLEDs(*pCube->pUpper);
 }
 
 void CubeDisplay::rotate(CubeFace *cf, boolean isInverse, int rotationMillis) {
