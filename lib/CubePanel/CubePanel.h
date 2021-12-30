@@ -1,3 +1,6 @@
+#ifndef CUBE_PANEL_H
+#define CUBE_PANEL_H
+
 #include <FastLED.h>
 
 /**
@@ -18,3 +21,5 @@ struct CubePanel {
 
   boolean isCorrectColor( );
 };
+
+#endif

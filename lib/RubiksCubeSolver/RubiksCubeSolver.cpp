@@ -6,84 +6,84 @@ RubiksCubeSolver::RubiksCubeSolver(RubiksCube *pCube) : cube(pCube) { cd.init( )
 
 void RubiksCubeSolver::_f( ) {
   delay(200);
-  cd.rotate(cube->pFront, false, 500);
+  cd.rotate(cube->pFront, false, TURN_SPEED);
   cube->f( );
   cd.display( );
 }
 
 void RubiksCubeSolver::_f_( ) {
   delay(200);
-  cd.rotate(cube->pFront, true, 500);
+  cd.rotate(cube->pFront, true, TURN_SPEED);
   cube->f_( );
   cd.display( );
 }
 
 void RubiksCubeSolver::_l( ) {
   delay(200);
-  cd.rotate(cube->pLeft, false, 500);
+  cd.rotate(cube->pLeft, false, TURN_SPEED);
   cube->l( );
   cd.display( );
 }
 
 void RubiksCubeSolver::_l_( ) {
   delay(200);
-  cd.rotate(cube->pLeft, true, 500);
+  cd.rotate(cube->pLeft, true, TURN_SPEED);
   cube->l_( );
   cd.display( );
 }
 
 void RubiksCubeSolver::_b( ) {
   delay(200);
-  cd.rotate(cube->pBack, false, 500);
+  cd.rotate(cube->pBack, false, TURN_SPEED);
   cube->b( );
   cd.display( );
 }
 
 void RubiksCubeSolver::_b_( ) {
   delay(200);
-  cd.rotate(cube->pBack, true, 500);
+  cd.rotate(cube->pBack, true, TURN_SPEED);
   cube->b_( );
   cd.display( );
 }
 
 void RubiksCubeSolver::_r( ) {
   delay(200);
-  cd.rotate(cube->pRight, false, 500);
+  cd.rotate(cube->pRight, false, TURN_SPEED);
   cube->r( );
   cd.display( );
 }
 
 void RubiksCubeSolver::_r_( ) {
   delay(200);
-  cd.rotate(cube->pRight, true, 500);
+  cd.rotate(cube->pRight, true, TURN_SPEED);
   cube->r_( );
   cd.display( );
 }
 
 void RubiksCubeSolver::_u( ) {
   delay(200);
-  cd.rotate(cube->pUpper, false, 500);
+  cd.rotate(cube->pUpper, false, TURN_SPEED);
   cube->u( );
   cd.display( );
 }
 
 void RubiksCubeSolver::_u_( ) {
   delay(200);
-  cd.rotate(cube->pUpper, true, 500);
+  cd.rotate(cube->pUpper, true, TURN_SPEED);
   cube->u_( );
   cd.display( );
 }
 
 void RubiksCubeSolver::_d( ) {
   delay(200);
-  cd.rotate(cube->pBottom, false, 500);
+  cd.rotate(cube->pBottom, false, TURN_SPEED);
   cube->d( );
   cd.display( );
 }
 
 void RubiksCubeSolver::_d_( ) {
   delay(200);
-  cd.rotate(cube->pBottom, true, 500);
+  cd.rotate(cube->pBottom, true, TURN_SPEED);
   cube->d_( );
   cd.display( );
 }
